@@ -20,7 +20,7 @@ Term: Fall 2018
 
 **Project summary**: In this project, we created an OCR post-processing procedure to enhance Tesseract OCR output accuracy.
 
-0. We modified `ground_truth` as `ground_truth_trimed` since 13 files in the data folder, rows in ground truth mismatch rows in tesseract.
+0. We modified `ground_truth` as `ground_truth_trimed` since 13 files in the data folder, rows in ground truth mismatch rows in tesseract. For more details, please refer to [README.md](data/README.md)
 1. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
 2. Locate the corresponding error words in ground truth dataset. 
   * if the number of words in corresponding row are equalled, locate the ground truth word by indexing
@@ -46,7 +46,7 @@ Term: Fall 2018
 
 * Shiqing Long: Assist with features scoring and model building, OCR performance evaluation, and presentation.
 * Yang Yue: OCR performance evaluation, README, normalization attempt.
-* Yiding Xie: Error Detection, generate all files as corpus, map erros with corresponding ground truth words.
+* Yiding Xie: Error Detection, generate all files as corpus, identify corresponding ground truth words with detected error words, partially contribute to OCR performance evaluation.
 * Yingqiao Zhang: Feature scoring, select candidate, modeling, model evaluation.
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
