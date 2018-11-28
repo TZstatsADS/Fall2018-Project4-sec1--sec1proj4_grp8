@@ -1,69 +1,35 @@
 ---
-title: 'Optical character recognition (OCR)'
-output: 
+title: "Project 4 - OCR (Optical Character Recognition)"
+author: "Section 1 - Group 8"
+output:
   html_document:
-    toc: true
-    toc_depth: 2
-    toc_float:
-      collapsed: false
-      smooth_scroll: false
-    number_sections: true
-    code_folding: hide
+    df_print: paged
 ---
 
-Jing Wu
-
-GU4243/GR5243: Applied Data Science
-
-<style type="text/css">
-h1.title {
-  font-size: 24px;
-  color: Black;
-}
-h1 { /* Header 1 */
-  font-size: 24px;
-  color: Black;
-}
-h2 { /* Header 2 */
-  font-size: 20px;
-  color: Black;
-}
-h3 { /* Header 3 */
-  font-size: 16px;
-  color: Black;
-}
-h4 { /* Header 4 */
-  font-size: 14px;
-  color: Grey;
-}
-</style>
-# Introduction {-}
-
-Optical character recognition (OCR) is the process of converting scanned images of machine printed or
-handwritten text (numerals, letters, and symbols), into machine readable character streams, plain (e.g. text files) or formatted (e.g. HTML files). As shown in Figure 1, the data *workflow* in a typical OCR system consists of three major stages:
-
-* Pre-processing
-
-* OCR character recognition
-
-* Post-processing
-
-![](../figs/ocr_flowchart.png) 
-
-We have processed raw scanned images through the first two steps are relying on the [Tessearct OCR machine](https://en.wikipedia.org/wiki/Tesseract_(software)). R package tutorial can be found [here](https://www.r-bloggers.com/the-new-tesseract-package-high-quality-ocr-in-r/). 
-
-BUT this is not the FOCUS of this project!!!
-
-In this project, we are going to **focus on the third stage -- post-processing**, which includes two tasks: *error detection* and *error correction*.  
 
 # Step 1 - Load library and source code
 ```{r, warning=FALSE, message = FALSE}
 if (!require("devtools")) install.packages("devtools")
+if (!require("stringdist")) install.packages("stringdist")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("gbm")) install.packages("gbm")
+if (!require("ada")) install.packages("ada")
+if (!require("ebmc")) install.packages("ebmc")
+if (!require("data.table")) install.packages("data.table")
+
 if (!require("pacman")) {
   ## devtools is required
   library(devtools)
   install_github("trinker/pacman")
 }
+
+library(stringdist)
+library(stringr)
+library(dplyr)
+library(gbm)
+library(ada)
+library(ebmc)
+library(data.table)
 
 pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 source('../lib/ifCleanToken.R')
@@ -93,64 +59,244 @@ for(i in c(1:length(file_name_vec))){
 
 Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or *incorrectly processed words* -- check to see if an input string is a valid dictionary word or if its n-grams are all legal.
 
-The referenced papers are:
+Paper: C2
 
-1. [Rule-based techniques](http://webpages.ursinus.edu/akontostathis/KulpKontostathisFinal.pdf)
+Here we followed the paper and implemented the rule-based methodology.
+```{r, warning=FALSE, message = FALSE}
+rerun_data = F
+source("../lib/line_mismatch_finder.R")
+source("../lib/d1_detect.R")
 
-- rules are in the section 2.2 
-
-2. [Letter n-gram](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1672564)
-
-- focus on positional binary digram in section 3-a.error detection
-
-3. Probabilistic techniques -- [SVM garbage detection](https://dl.acm.org/citation.cfm?doid=2034617.2034626)
-
-- features are in section 5 (you can choose not to implement ‘Levenshtein distance’ feature)
+total_ground_truth_txt_100 <- list()
+total_tesseract_txt_100 <- list()
+total_mismatch_info_100 <- list()
+total_d1_output <- list()
+total_detect_output <- list()
+total_tesseract_clean_output <- list()
+total_mismatch_rownum_100 <- matrix(NA, nrow = length(file_name_vec), ncol = 2)
 
 
-In this statercode, we implement the first three rules in the first paper -- rule based techniques, as an example.
+for (k in 1:length(file_name_vec)){
+  current_file_name <- sub(".txt","",file_name_vec[k])
+  
+  ## read the ground truth text
+  current_ground_truth_txt <- readLines(paste("../data/ground_truth/",current_file_name,".txt",sep=""), warn=FALSE)
+  ## read the tesseract text
+  current_tesseract_txt <- readLines(paste("../data/tesseract/",current_file_name,".txt",sep=""), warn=FALSE)
+  #clean_tesseract_txt <- paste(current_tesseract_txt, collapse = " ")
+  
+  ## Remove numbers and punctuations
+  # current_ground_truth_txt <- gsub('[[:punct:] ]+',' ',current_ground_truth_txt)
+  # current_ground_truth_txt <- gsub('[0-9]+', '', current_ground_truth_txt)
+  # current_tesseract_txt <- gsub('[[:punct:] ]+',' ',current_tesseract_txt)
+  # current_tesseract_txt <- gsub('[0-9]+', '', current_tesseract_txt)
+  
+  ## Record mismatching lines
+  mismatch_info <- line_mismatch_finder(tess = current_tesseract_txt, grdth = current_ground_truth_txt)
+  
+  ## Save into List
+  total_tesseract_txt_100[[k]] <- current_tesseract_txt
+  total_ground_truth_txt_100[[k]] <- current_ground_truth_txt
+  total_mismatch_info_100[[k]] <- mismatch_info
+}
 
-```{r}
-### only process one of the files in the folder as an example, in your project, you need to use all the files
-current_file_name <- sub(".txt","",file_name_vec[5])
+  ## Check if there are any mismatches in terms of article's total number of rows
+  for (k in 1:length(file_name_vec)){
+    total_mismatch_rownum_100[k,1] <- length(total_tesseract_txt_100[[k]])
+    total_mismatch_rownum_100[k,2] <- length(total_ground_truth_txt_100[[k]])
+  }
+  ## It turns out all articles match now
+  sum(total_mismatch_rownum_100[,1]==total_mismatch_rownum_100[,2]) == 100
 
-## read the ground truth text
-current_ground_truth_txt <- readLines(paste("../data/ground_truth/",current_file_name,".txt",sep=""), warn=FALSE)
 
-## read the tesseract text
-current_tesseract_txt <- readLines(paste("../data/tesseract/",current_file_name,".txt",sep=""), warn=FALSE)
-clean_tesseract_txt <- paste(current_tesseract_txt, collapse = " ")
+  for (k in 1:length(file_name_vec)){
+    current_d1_output <- d1_detect(current_tesseract_txt = total_tesseract_txt_100[[k]],
+                                        current_ground_truth_txt = total_ground_truth_txt_100[[k]],
+                                        mismatch_info = total_mismatch_info_100[[k]])
+    
+    total_detect_output[[k]] <- current_d1_output[[1]]
+    total_tesseract_clean_output[[k]] <- current_d1_output[[2]]
+    #print(k)  ## For debug purpose only
+  }
 
-## detect tesseract word error
-tesseract_vec <- str_split(clean_tesseract_txt," ")[[1]] #1124 tokens
-tesseract_if_clean <- unlist(lapply(tesseract_vec,ifCleanToken)) # source code of ifCleanToken in in lib folder
+
+  if (rerun_data){
+    save(total_tesseract_txt_100, file="../output/total_tesseract_txt_100.RData")
+    save(total_ground_truth_txt_100, file="../output/total_ground_truth_txt_100.RData")
+    save(total_detect_output, file="../output/total_detect_output.RData")
+    save(total_tesseract_clean_output, file="../output/total_tesseract_clean_output.RData")
+  }
+
+
+
 ```
 
 # Step 4 - Error correction
 
-Given the detected word error, in order to find the best correction, we need to generating the candidate corrections: a dictionary or a database of legal n-grams to locate one or more potential correction terms. Then we need invoke some lexical-similarity measure between the misspelled string and the candidates or a probabilistic estimate of the likelihood of the correction to rank order the candidates.
+Paper: C2
 
-The referenced papers are:
-
-1. [Letter n-gram](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1672564}{positional binary digram)
-
-- focus on section 3-b.error correction
-
-2. Supervised model -- [correction regressor](https://arxiv.org/pdf/1611.06950.pdf)
-
-3. [probability scoring without context](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
-
-- focus on section 3
-
-4. [probability scoring with contextual constraints](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
-
-- focus on section 5
-
-5. [topic models](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4377099)
-
-Here, in our code, we just simply remove the detected-errors.
+Load data from step 3
 ```{r}
-tesseract_delete_error_vec <- tesseract_vec[tesseract_if_clean] #1095
+load("../output/total_tesseract_txt_100.RData")         ## combined tesseract_txt from all 100 articles
+load("../output/total_ground_truth_txt_100.RData")      ## combined ground_truth_txt from all 100 articles
+load("../output/total_detect_output.RData")             ## detected error words with their suspected ground truth words from all 100 articles
+load("../output/total_tesseract_clean_output.RData")    ## combined tesseract_clean_txt from all 100 articles
+```
+
+
+Construction corpus and look for top candidates
+By far, we only random sampled 5 papers for further analysis (because of time constraint)
+```{r}
+set.seed(2018)
+selected_index <- sample(1:100,5)
+current_ground_truth_txt <- list(c(total_ground_truth_txt_100[[selected_index[1]]],
+                                   total_ground_truth_txt_100[[selected_index[2]]],
+                                   total_ground_truth_txt_100[[selected_index[3]]],
+                                   total_ground_truth_txt_100[[selected_index[4]]],
+                                   total_ground_truth_txt_100[[selected_index[5]]]))
+
+current_tesseract_txt <- list(c(total_tesseract_txt_100[[selected_index[1]]],
+                                total_tesseract_txt_100[[selected_index[2]]],
+                                total_tesseract_txt_100[[selected_index[3]]],
+                                total_tesseract_txt_100[[selected_index[4]]],
+                                total_tesseract_txt_100[[selected_index[5]]]))
+
+current_tesseract_clean_txt <- list(c(total_tesseract_clean_output[[selected_index[1]]],
+                                total_tesseract_clean_output[[selected_index[2]]],
+                                total_tesseract_clean_output[[selected_index[3]]],
+                                total_tesseract_clean_output[[selected_index[4]]],
+                                total_tesseract_clean_output[[selected_index[5]]]))
+
+
+corpus <- c()
+for(i in 1:length(strsplit(current_ground_truth_txt[[1]],split = ' '))){
+  corpus <- c(corpus,strsplit(current_ground_truth_txt[[1]],split = ' ')[[i]])
+}
+
+error_words <- c()
+for(i in selected_index){
+  error_words <- c(error_words,as.character(total_detect_output[[i]][,1]))
+}
+
+corpus_matrix <- matrix(corpus,nrow = length(corpus),ncol = 1)
+
+distance <- function(x){
+  return(stringdist::stringdist(x,word))
+}
+
+total_candidate <- list()
+candidate_time<-system.time(
+for(i in error_words){
+  word <- i
+  result <- apply(corpus_matrix,1,distance)
+  index <- order(result)[1:50]
+  total_candidate[[word]] <- unique(corpus_matrix[index,])
+}
+)
+
+```
+
+Construct training set
+```{r, warning=FALSE, message = FALSE}
+source("../lib/feature_score.R")
+training <- matrix(NA,nrow = sum(lengths(total_candidate)),ncol = 6)
+comparison <- rbind(total_detect_output[[selected_index[1]]],
+                    total_detect_output[[selected_index[2]]],
+                    total_detect_output[[selected_index[3]]],
+                    total_detect_output[[selected_index[4]]],
+                    total_detect_output[[selected_index[5]]]
+                    )
+
+trainset_time<-system.time(
+  for(i in 1:length(total_candidate)){
+    can_matrix <- matrix(total_candidate[[i]],ncol = 1)
+    w_e <- names(total_candidate)[i]
+    true_correction <- filter(comparison,tesseract_err == w_e)[,2]
+    
+    partframe <- data.frame(rep(w_e,lengths(total_candidate)[i]),total_candidate[[i]],
+                            apply(can_matrix,1,LED_score),apply(can_matrix,1,SS_score),
+                            apply(can_matrix,1,LP_score),apply(can_matrix,1,correction))
+    partframe <- as.matrix(partframe)
+    training[(sum(lengths(total_candidate)[1:i])-lengths(total_candidate)[i]+1)
+             :sum(lengths(total_candidate)[1:i]),] <- partframe
+  }
+)
+training <- as.data.frame(training)
+colnames(training) <- c('error','candidate','score1','score2','score3','correction')
+
+training$correction <- ifelse(training$correction=='TRUE'|training$correction==' TRUE','1','0')
+#training
+```
+
+Train model
+```{r}
+### handle imbalanced data
+training_one <- filter(training,correction == '1')
+training_zero <- filter(training,correction == '0')
+training_sub <- training_zero[sample(1:nrow(training_zero),nrow(training_one)),]
+training_balance <- rbind(training_one,training_sub)
+```
+
+Prediction
+```{r}
+#model <- gbm.fit(x = training_balance[,c(3,4,5)],y = training_balance[,6],distribution = 'adaboost',n.trees = 100)
+#prediction <- predict(model,training[,c(3,4,5)],n.trees = gbm.perf(model))
+
+#model <- gbm(correction ~ score1 + score2 + score3,data = training_balance,distribution = 'adaboost',n.trees = 2000)
+#prediction <- predict(model,training[,c(3,4,5)],n.trees = 2000)
+
+#model <- ada(x = training_balance[,c(3,4,5)],y = training_balance$correction,loss = 'logistic')
+#predict(model,training[,c(3,4,5)])
+
+model <- adam2(correction ~ score1 + score2 + score3,data = training_balance,size = 100,alg = 'cart')
+prediction<-predict(model,training[,c(3,4,5)])
+```
+
+Select top 3 candidates for each word
+```{r}
+training$confidence <- prediction
+final_result <- list()
+for(i in unique(training$error)){
+  data <- filter(training,error == i)
+  index <- order(data$confidence,decreasing = T)[1:3]
+  top_candidate <- data$candidate[index]
+  final_result[[i]] <- top_candidate
+}
+#final_result
+```
+
+Construct prediction dataframe for further analysis
+```{r, warning=FALSE, message = FALSE}
+
+df = data.frame(final_result, row.names = NULL)
+df = t(df)
+df = data.frame(df)
+df <- add_rownames(df, "tesseract_err")
+colnames(df) = c("tesseract_err", "Top1", "Top2", "Top3")
+
+comparison1 = as.data.frame(comparison,stringsAsFactors=F)
+final = merge(df, comparison1, by = "tesseract_err", all.y=TRUE)
+final = na.omit(final)
+#final$index <- ifelse()
+
+final <- data.frame(lapply(final, as.character), stringsAsFactors=FALSE)
+for (i in 1:nrow(final)){
+  final$index[i] <- ifelse(length(which(final$ground_truth_err[i] == final[i,2:4]))>0, which(final$ground_truth_err[i] == final[i,2:4]),0)
+}
+
+
+```
+
+Basic evaluation for quick analysis
+```{r, warning=FALSE, message = FALSE}
+evaluate <- c()
+for(i in names(final_result)){
+  if(filter(comparison,tesseract_err == i)[,2] %in% final_result[[i]]>0){
+    evaluate <- c(evaluate,1)
+  }
+  else{evaluate <- c(evaluate,0)}
+}
+mean(evaluate)
 ```
 
 # Step 5 - Performance measure
@@ -167,10 +313,45 @@ Both *precision* and *recall* are mathematically convenient measures because the
 Here, we only finished the **word level evaluation** criterions, you are required to complete the **letter-level** part.
 
 ```{r}
-ground_truth_vec <- str_split(paste(current_ground_truth_txt, collapse = " ")," ")[[1]] #1078
-old_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_vec)) #607
-new_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_delete_error_vec)) #600
+target_char_only <- c(letters,0,1,2,3,4,5,6,7,8,9)
 
+## Load word vectors
+ground_truth_vec <- str_split(paste(current_ground_truth_txt, collapse = " ")," ")[[1]]
+tesseract_vec <- str_split(paste(current_tesseract_txt, collapse = " ")," ")[[1]] 
+tesseract_delete_error_vec <- current_tesseract_clean_txt[[1]]
+predict_vec <- final[final$index!=0,5]
+predict_grdth_vec <- final[,5]
+
+## Remove punctuations from word vectors
+ground_truth_vec_remove <- gsub('[[:punct:]]+','',ground_truth_vec)
+tesseract_vec_remove <- gsub('[[:punct:]]+','',tesseract_vec)
+tesseract_delete_error_vec_remove <- gsub('[[:punct:]]+','',tesseract_delete_error_vec)
+predict_vec_remove <- gsub('[[:punct:]]+','',predict_vec)
+predict_grdth_vec_remove <- gsub('[[:punct:]]+','',predict_grdth_vec)
+
+#old_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_vec)) 
+#new_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_delete_error_vec)) 
+
+## Word Level evaluation
+old_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec_remove), tolower(tesseract_vec_remove)) 
+new_intersect_vec_1 <- vecsets::vintersect(tolower(ground_truth_vec_remove), tolower(tesseract_delete_error_vec_remove)) 
+new_intersect_vec_2 <- vecsets::vintersect(tolower(predict_grdth_vec_remove), tolower(predict_vec_remove))
+new_intersect_vec <- c(new_intersect_vec_1, new_intersect_vec_2)
+
+## Character Level evaluation
+ground_truth_cha <- unlist(strsplit(tolower(ground_truth_vec),split = ""))
+ground_truth_table_all_cha <- length(ground_truth_cha[ground_truth_cha %in% target_char_only])
+
+tesseract_cha<- unlist(strsplit(tolower(tesseract_vec),split = ""))
+tesseract_cha_table_all_cha <- length(tesseract_cha[tesseract_cha %in% target_char_only])
+
+common_cha <- vecsets::vintersect(unlist(strsplit(tolower(ground_truth_vec),"")), unlist(strsplit(tolower(tesseract_delete_error_vec),"")))
+common_cha_table_all_cha <- length(common_cha[common_cha %in% target_char_only])
+
+common_cha_post <- vecsets::vintersect(unlist(strsplit(tolower(predict_grdth_vec),"")), unlist(strsplit(tolower(predict_vec),"")))
+common_cha_table_post <- length(common_cha_post[common_cha_post %in% target_char_only])
+
+## Create table
 OCR_performance_table <- data.frame("Tesseract" = rep(NA,4),
                                     "Tesseract_with_postprocessing" = rep(NA,4))
 row.names(OCR_performance_table) <- c("word_wise_recall","word_wise_precision",
@@ -179,27 +360,15 @@ OCR_performance_table["word_wise_recall","Tesseract"] <- length(old_intersect_ve
 OCR_performance_table["word_wise_precision","Tesseract"] <- length(old_intersect_vec)/length(tesseract_vec)
 OCR_performance_table["word_wise_recall","Tesseract_with_postprocessing"] <- length(new_intersect_vec)/length(ground_truth_vec)
 OCR_performance_table["word_wise_precision","Tesseract_with_postprocessing"] <- length(new_intersect_vec)/length(tesseract_delete_error_vec)
+OCR_performance_table["character_wise_recall","Tesseract"] <- 
+  common_cha_table_all_cha/ground_truth_table_all_cha
+OCR_performance_table["character_wise_precision","Tesseract"] <- 
+  common_cha_table_all_cha/tesseract_cha_table_all_cha
+OCR_performance_table["character_wise_recall","Tesseract_with_postprocessing"] <- 
+  (common_cha_table_post+common_cha_table_all_cha)/ground_truth_table_all_cha
+OCR_performance_table["character_wise_precision","Tesseract_with_postprocessing"] <- 
+  (common_cha_table_post+common_cha_table_all_cha)/tesseract_cha_table_all_cha
 kable(OCR_performance_table, caption="Summary of OCR performance")
+
+OCR_performance_table
 ```
-
-Besides the above required measurement, you are encouraged the explore more evaluation measurements. Here are some related references:
-
-1. Karpinski, R., Lohani, D., & Belaïd, A. *Metrics for Complete Evaluation of OCR Performance*. [pdf](https://csce.ucmss.com/cr/books/2018/LFS/CSREA2018/IPC3481.pdf)
-
-- section 2.1 Text-to-Text evaluation
-
-2. Mei, J., Islam, A., Wu, Y., Moh'd, A., & Milios, E. E. (2016). *Statistical learning for OCR text correction*. arXiv preprint arXiv:1611.06950. [pdf](https://arxiv.org/pdf/1611.06950.pdf)
-
-- section 5, separate the error detection and correction criterions
-
-3. Belaid, A., & Pierron, L. (2001, December). *Generic approach for OCR performance evaluation*. In Document Recognition and Retrieval IX (Vol. 4670, pp. 203-216). International Society for Optics and Photonics. [pdf](https://members.loria.fr/ABelaid/publis/spie02-belaid-pierron.pdf)
-
-- section 3.2, consider the text alignment
-
-# References {-}
-
-1. Borovikov, E. (2014). *A survey of modern optical character recognition techniques*. arXiv preprint arXiv:1412.4183.[pdf](https://pdfs.semanticscholar.org/79c9/cc90b8c2e2c9c54c3862935ea00df7dd56ed.pdf)
-(This paper is the source of our evaluation criterion)
-
-2. Kukich, K. (1992). *Techniques for automatically correcting words in text*. Acm Computing Surveys (CSUR), 24(4), 377-439. [pdf](http://www.unige.ch/eti/ptt/docs/kukich-92.pdf)
-(This paper is the benchmark review paper)
