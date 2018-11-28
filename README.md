@@ -26,7 +26,7 @@ Term: Fall 2018
 3. Select possible Candidates for errors, calculate fetures scoring for each candidate; label candidate with 1 if it equals to ground truth, else 0.
 4. Performed Adaboost.R2 to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf) ![prediction](figs/prediction.png) 
 
-5. Evaluated OCR performance based on two formulas, and both in word-level and character-level:
+5. Evaluated OCR performance based on two formulas for both word-level and character-level:
 ![formula](figs/formula.png)
 
 **OCR Performance Result**
