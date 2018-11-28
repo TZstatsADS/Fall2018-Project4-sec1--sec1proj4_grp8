@@ -20,7 +20,7 @@ Term: Fall 2018
 
 **Project summary**: In this project, we created an OCR post-processing procedure to enhance Tesseract OCR output accuracy.
 
-0. Since in 13 files, rows in ground truth mismatch rows in tesseract, we modified ground_truth as ground_truth_trimed.
+0. We modified ground_truth as ground_truth_trimed since 13 files in the data folder, rows in ground truth mismatch rows in tesseract.
 1. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
 2. Locate the corresponding error words in ground truth dataset. 
 3. Select possible Candidates for errors, calculate fetures scoring for each candidate; label candidate with 1 if it equals to ground truth, else 0.
