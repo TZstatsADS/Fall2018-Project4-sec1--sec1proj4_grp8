@@ -1,8 +1,8 @@
 d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_info) {
   
-  ############################################################
-  #### this function is to find matching ground truth word ###
-  ############################################################
+  ############################################################################################
+  #### this function is to find matching ground truth words for those detected error words ###
+  ############################################################################################
   
   tesseract_vec_by_line <- list()
   tesseract_if_clean_by_line <- list()

@@ -9,6 +9,11 @@ ifCleanToken <- function(cur_token){
   now <- 1
   if_clean <- TRUE
   
+  ##########################################################################################
+  #### this function is implemented based on D1 Paper with 8 rules to select error words ###
+  ##########################################################################################
+  
+  
   ## in order to accelerate the computation, conduct ealy stopping
   rule_list <- c("str_count(cur_token, pattern = '[A-Za-z0-9]') <= 0.5*nchar(cur_token)", # If the number of punctuation characters in a string is greater than the number of alphanumeric characters, it is garbage
                  "length(unique(strsplit(gsub('[A-Za-z0-9]','',substr(cur_token, 2, nchar(cur_token)-1)),'')[[1]]))>1", #Ignoring the first and last characters in a string, if there are two or more different punctuation characters in thestring, it is garbage
