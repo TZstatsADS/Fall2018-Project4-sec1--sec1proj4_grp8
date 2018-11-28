@@ -24,10 +24,11 @@ Term: Fall 2018
 2. Locate the corresponding error words in ground truth dataset.
 3. Performed Adaboost to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf)
 4. Evaluated OCR performance based on two formulas:
-\begin{align*}
-\mbox{recall}&=\frac{\mbox{number of correct items}}{\mbox{number of items in ground truth}} \\
-\mbox{precision}&=\frac{\mbox{number of correct items}}{\mbox{number of items in OCR output}}
-\end{align*}
+
+$recall=\frac{\mbox{number of correct items}}{\mbox{number of items in ground truth}}$ 
+
+$precision=\frac{\mbox{number of correct items}}{\mbox{number of items in OCR output}}$
+
 
 **OCR Performance Result**
 
