@@ -8,10 +8,10 @@ Term: Fall 2018
 
 + Team #8
 + Team members
-	+ Shiqing Long
-	+ Yang Yue
-	+ Yiding Xie
-	+ Yingqiao Zhang
+	+ Shiqing Long: sl4225
+	+ Yang Yue: yy2826
+	+ Yiding Xie: yx2443
+	+ Yingqiao Zhang: yz3209
 	
 	(Names are listed in alphabetical order of last names.)
 	
@@ -20,9 +20,11 @@ Term: Fall 2018
 
 **Project summary**: In this project, we created an OCR post-processing procedure to enhance Tesseract OCR output accuracy.
 
-0. We modified ground_truth as ground_truth_trimed since 13 files in the data folder, rows in ground truth mismatch rows in tesseract.
+0. We modified `ground_truth` as `ground_truth_trimed` since 13 files in the data folder, rows in ground truth mismatch rows in tesseract.
 1. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
 2. Locate the corresponding error words in ground truth dataset. 
+  * if the number of words in corresponding row are equalled, locate the ground truth word by indexing
+  * if the number of words in corresponding row are not equal, extract previous and following 2 words of the error word(total of 5 index), and use distance function to locate the most likly ground truth word.
 3. Select possible Candidates for errors, calculate fetures scoring for each candidate; label candidate with 1 if it equals to ground truth, else 0.
 4. Performed Adaboost.R2 to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf) ![prediction](figs/prediction.png) 
 
