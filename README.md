@@ -22,9 +22,10 @@ Term: Fall 2018
 
 1. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
 2. Locate the corresponding error words in ground truth dataset.
-3. Performed Adaboost to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf)
+3. Performed Adaboost to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf) ![prediction](figs/prediction.png) 
+
 4. Evaluated OCR performance based on two formulas:
-![forlula](figs/formula.png)
+![formula](figs/formula.png)
 
 **OCR Performance Result**
 
