@@ -20,8 +20,8 @@ d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_
     ground_truth_vec_by_line[[i]] <- str_split(current_ground_truth_txt[i]," ")[[1]]
     
     ## if the number of words in corresponding row are not equal, 
-    ## extract previous and following 2 words of the error word(total of 5 ), 
-    ## and apply distance function to locate the most likely ground truth word.
+    ## extract previous and following 2 words of the error word (total of 5 ), 
+    ## and apply string-distance function (stringdist) to locate the most likely ground truth word.
     
     if ((i %in% mismatch_info$mismatch_line) & (sum(!tesseract_if_clean_by_line[[i]])>0)){
       tesseract_errorword <- tesseract_vec_by_line[[i]][!tesseract_if_clean_by_line[[i]]]
