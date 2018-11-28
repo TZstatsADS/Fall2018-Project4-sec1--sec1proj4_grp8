@@ -60,5 +60,6 @@ d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_
   tesseract_err <- tesseract_vec[!tesseract_if_clean]
   comparison <- cbind.data.frame(tesseract_err, ground_truth_err)
   
-  return(comparison)
+  #return(comparison)
+  return(list(comparison=comparison,tesseract_delete_error_vec=tesseract_delete_error_vec))
 }
