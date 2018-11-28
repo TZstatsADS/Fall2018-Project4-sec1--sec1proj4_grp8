@@ -19,8 +19,11 @@ d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_
     tesseract_if_clean <- c(tesseract_if_clean, tesseract_if_clean_by_line[[i]])
     ground_truth_vec_by_line[[i]] <- str_split(current_ground_truth_txt[i]," ")[[1]]
     
+    ## if the number of words in corresponding row are not equal, 
+    ## extract previous and following 2 words of the error word(total of 5 ), 
+    ## and apply distance function to locate the most likely ground truth word.
+    
     if ((i %in% mismatch_info$mismatch_line) & (sum(!tesseract_if_clean_by_line[[i]])>0)){
-      ## For non-matching word count lines
       tesseract_errorword <- tesseract_vec_by_line[[i]][!tesseract_if_clean_by_line[[i]]]
       #tesseract_errorword <- tesseract_errorword[tesseract_errorword!=""]
       err_index <- which(!tesseract_if_clean_by_line[[i]])
@@ -60,5 +63,9 @@ d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_
   tesseract_err <- tesseract_vec[!tesseract_if_clean]
   comparison <- cbind.data.frame(tesseract_err, ground_truth_err)
   
-  return(comparison)
+  # return a list of two items:
+  # 1. comparison table (left column: detected error word in tesseract; right column: suspected ground truth word)
+  # 2. tesseract_delete_error_vec: tesseract word vectors with clean words only
+  
+  return(list(comparison=comparison,tesseract_delete_error_vec=tesseract_delete_error_vec))
 }

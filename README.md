@@ -38,7 +38,9 @@ Term: Fall 2018
 + word wise: in terms of word based accuracy.
 + character wise: in terms of letter based accuracy.
 + Tesseract: pre- process data
-+ Tesseract_with_postprocessing: post- processed data.
++ Tesseract_with_postprocessing: post- processed data, that is Tesseract with Correction.
+
+![result](figs/Evaluation.png)
 
 **Contribution statement**: ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
 
