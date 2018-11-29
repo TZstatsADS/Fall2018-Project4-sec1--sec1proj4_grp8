@@ -14,14 +14,14 @@ Term: Fall 2018
 	+ Yingqiao Zhang: yz3209
 	
 	(Names are listed in alphabetical order of last names.)
-	
++ Paper: C2 + D1 	
 
 
 
 **Project summary**: In this project, we created an OCR post-processing procedure to enhance Tesseract OCR output accuracy.
 
 0. We modified `ground_truth` as `ground_truth_trimmed` since there are 13 files in the data folder with mismatching rows between `ground_truth` and `tesseract`. For more details, please refer to [README.md](data/README.md)
-1. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
+1. First clean the data by filtering out all punctuations. Detect Tesseract data error based on 8 rules from paper [D-1:Shortening Documents and Weeding Out Garbage ](doc/paper/D-1.pdf)
 2. Locate the corresponding error words in ground truth dataset. 
   * if the number of words in corresponding row (between tesseract and ground_truth) are equal, locate the ground truth word by indexing directly
   * if the number of words in corresponding row are not equal, extract previous and following 2 words of the error word (total of 5 index), and apply string-distance function (stringdist) to locate the most likely ground truth word.
