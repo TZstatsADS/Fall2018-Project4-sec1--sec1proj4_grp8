@@ -31,6 +31,9 @@ Term: Fall 2018
 5. Evaluated OCR performance based on two formulas for both word-level and character-level:
 ![formula](figs/formula.png)
 
+**Custom Functions**
++ Five different functions were implemented for the purpose of this project. Detailed descriptions can be found here: [README.md](lib/README.md)
+
 **OCR Performance Result**
 
 ![result](figs/result.jpg)
