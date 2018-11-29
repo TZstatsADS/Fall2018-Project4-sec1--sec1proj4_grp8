@@ -26,7 +26,8 @@ ifCleanToken <- function(cur_token){
                  "(str_count(cur_token, pattern = '[A-Z]') > str_count(cur_token, pattern = '[a-z]')) && (str_count(cur_token, pattern = '[A-Z]') < nchar(cur_token))", 
                  
                  # If all the characters in a string are alphabetic, and if the number of consonants in the string is greater than 8 times the number of vowels in the string, or vice-versa
-                 "(str_count(cur_token, pattern = '[A-Za-z]') == nchar(cur_token)) &&
+                 ## Please note that we added an additional requirement of nchar >=3, because we noticed many words like "a", "I" also got picked up 
+                 "(str_count(cur_token, pattern = '[A-Za-z]') == nchar(cur_token)) && (!(cur_token %in% c('a','A','i','I'))) &&
                  ((length(gregexpr(cur_token, pattern = '[aeiouAEIOU]')[[1]]) < (1/9)*nchar(cur_token)) ||
                  (length(gregexpr(cur_token, pattern = '[aeiouAEIOU]')[[1]]) > 8/9*nchar(cur_token)))",
                 
