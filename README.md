@@ -26,7 +26,7 @@ Term: Fall 2018
   * if the number of words in corresponding row (between tesseract and ground_truth) are equal, locate the ground truth word by indexing directly
   * if the number of words in corresponding row are not equal, extract previous and following 2 words of the error word (total of 5 index), and apply string-distance function (stringdist) to locate the most likely ground truth word.
 3. Select possible Candidates for errors, calculate fetures scoring for each candidate; label candidate with 1 if it equals to ground truth, else 0.
-4. Performed Adaboost.R2 to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf) ![prediction](figs/prediction.png) 
+4. Performed Adaboost.R2 to predict the top 3 best matching results to replace all error words. [C-2: Statistical Learning for OCR Text Correction](doc/paper/C-2.pdf) ![prediction](figs/Prediction.png) 
 
 5. Evaluated OCR performance based on two formulas for both word-level and character-level:
 ![formula](figs/formula.png)
@@ -36,7 +36,6 @@ Term: Fall 2018
 
 **OCR Performance Result**
 
-![result](figs/result.jpg)
 
 + word wise: in terms of word based accuracy.
 + character wise: in terms of letter based accuracy.
