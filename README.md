@@ -47,10 +47,10 @@ Term: Fall 2018
 
 **Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
 
-* Shiqing Long: *major contributor* Assist with features scoring and model building, OCR performance evaluation, and presentation.
+* Shiqing Long: *(major contributor)* Assist with features scoring and model building, OCR performance evaluation, and presentation.
 * Yang Yue: OCR performance evaluation, README, normalization attempt.
-* Yiding Xie: *major contributor* Error Detection, generate all files as corpus, identify corresponding ground truth words with detected error words, partially contribute to OCR performance evaluation, README.
-* Yingqiao Zhang: *major contributor* Feature scoring, select candidate, modeling, model evaluation.
+* Yiding Xie: *(major contributor)* Error Detection, generate all files as corpus, identify corresponding ground truth words with detected error words, partially contribute to OCR performance evaluation, README.
+* Yingqiao Zhang: *(major contributor)* Feature scoring, select candidate, modeling, model evaluation.
 
 *  All team members approve our work presented in this GitHub repository including this contributions statement. 
 
