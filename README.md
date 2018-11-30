@@ -45,14 +45,14 @@ Term: Fall 2018
 
 ![result](figs/Evaluation.png)
 
-**Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
+**Contribution statement**: ([default](doc/a_note_on_contributions.md))  All team members approve our work presented in this GitHub repository including this contributions statement. 
 
 * Shiqing Long: *(major contributor)* Assist with features scoring and model building, OCR performance evaluation, and presentation.
 * Yang Yue: OCR performance evaluation, README, normalization attempt.
 * Yiding Xie: *(major contributor)* Error Detection, generate all files as corpus, identify corresponding ground truth words with detected error words, partially contribute to OCR performance evaluation, README.
 * Yingqiao Zhang: *(major contributor)* Feature scoring, select candidate, modeling, model evaluation.
 
-*  All team members approve our work presented in this GitHub repository including this contributions statement. 
+
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
