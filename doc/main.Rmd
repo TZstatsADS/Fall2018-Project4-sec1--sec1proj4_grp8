@@ -297,18 +297,6 @@ for (i in 1:nrow(final)){
 
 ```
 
-Basic evaluation for quick analysis
-```{r, warning=FALSE, message = FALSE}
-evaluate <- c()
-for(i in names(final_result)){
-  if(filter(comparison,tesseract_err == i)[,2] %in% final_result[[i]]>0){
-    evaluate <- c(evaluate,1)
-  }
-  else{evaluate <- c(evaluate,0)}
-}
-mean(evaluate)
-
-```
 
 # Step 5 - Performance measure
 
