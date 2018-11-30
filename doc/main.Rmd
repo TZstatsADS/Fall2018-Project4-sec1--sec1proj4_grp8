@@ -66,6 +66,7 @@ Here we followed the paper and implemented the rule-based methodology.
 rerun_data = F
 source("../lib/line_mismatch_finder.R")
 source("../lib/d1_detect.R")
+source("../lib/remove_empty_line.R")
 
 total_ground_truth_txt_100 <- list()
 total_tesseract_txt_100 <- list()
@@ -85,11 +86,11 @@ for (k in 1:length(file_name_vec)){
   current_tesseract_txt <- readLines(paste("../data/tesseract/",current_file_name,".txt",sep=""), warn=FALSE)
   #clean_tesseract_txt <- paste(current_tesseract_txt, collapse = " ")
   
-  ## Remove numbers and punctuations
-  # current_ground_truth_txt <- gsub('[[:punct:] ]+',' ',current_ground_truth_txt)
-  # current_ground_truth_txt <- gsub('[0-9]+', '', current_ground_truth_txt)
-  # current_tesseract_txt <- gsub('[[:punct:] ]+',' ',current_tesseract_txt)
-  # current_tesseract_txt <- gsub('[0-9]+', '', current_tesseract_txt)
+  ## Remove punctuations & remove leading and trailing zeros
+  current_ground_truth_txt <- gsub('[[:punct:]]+','',current_ground_truth_txt)
+  current_ground_truth_txt <- trimws(current_ground_truth_txt, which = "both")
+  current_tesseract_txt <- gsub('[[:punct:]]+','',current_tesseract_txt)
+  current_tesseract_txt <- trimws(current_tesseract_txt, which = "both")
   
   ## Record mismatching lines
   mismatch_info <- line_mismatch_finder(tess = current_tesseract_txt, grdth = current_ground_truth_txt)
@@ -99,7 +100,13 @@ for (k in 1:length(file_name_vec)){
   total_ground_truth_txt_100[[k]] <- current_ground_truth_txt
   total_mismatch_info_100[[k]] <- mismatch_info
 }
-
+  
+  ################################################
+  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
+  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
+  ### lines of those ground_truth files
+  ################################################
+  
   ## Check if there are any mismatches in terms of article's total number of rows
   for (k in 1:length(file_name_vec)){
     total_mismatch_rownum_100[k,1] <- length(total_tesseract_txt_100[[k]])
@@ -108,13 +115,19 @@ for (k in 1:length(file_name_vec)){
   ## It turns out all articles match now
   sum(total_mismatch_rownum_100[,1]==total_mismatch_rownum_100[,2]) == 100
 
-
+  ## Code to locate the index of the corresponding ground truth text
+  ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
+  ## then locate the ground truth word by indexing directly
+  ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
+  ## words of the error word (total of 5 index), and apply string-distance function (stringdist) 
+  ## to locate the most likely ground truth word.
+  
   for (k in 1:length(file_name_vec)){
     current_d1_output <- d1_detect(current_tesseract_txt = total_tesseract_txt_100[[k]],
                                         current_ground_truth_txt = total_ground_truth_txt_100[[k]],
                                         mismatch_info = total_mismatch_info_100[[k]])
     
-    total_detect_output[[k]] <- current_d1_output[[1]]
+    total_detect_output[[k]] <- remove_empty_line(current_d1_output[[1]]) ## remove any lines with empty tess_err or empty ground_truth_err
     total_tesseract_clean_output[[k]] <- current_d1_output[[2]]
     #print(k)  ## For debug purpose only
   }
@@ -148,25 +161,21 @@ Construction corpus and look for top candidates
 By far, we only random sampled 5 papers for further analysis (because of time constraint)
 ```{r}
 set.seed(2018)
-selected_index <- sample(1:100,5)
-current_ground_truth_txt <- list(c(total_ground_truth_txt_100[[selected_index[1]]],
-                                   total_ground_truth_txt_100[[selected_index[2]]],
-                                   total_ground_truth_txt_100[[selected_index[3]]],
-                                   total_ground_truth_txt_100[[selected_index[4]]],
-                                   total_ground_truth_txt_100[[selected_index[5]]]))
+num <- 100       #input the number of articles used
+selected_index <- sample(1:100,num)
 
-current_tesseract_txt <- list(c(total_tesseract_txt_100[[selected_index[1]]],
-                                total_tesseract_txt_100[[selected_index[2]]],
-                                total_tesseract_txt_100[[selected_index[3]]],
-                                total_tesseract_txt_100[[selected_index[4]]],
-                                total_tesseract_txt_100[[selected_index[5]]]))
+random_list <- function(input_list, selected_index = selected_index){
+  temp <- c()
+  
+  for(i in selected_index){
+    temp <- c(temp,input_list[[i]])
+  }
+  return(list(temp))
+}
 
-current_tesseract_clean_txt <- list(c(total_tesseract_clean_output[[selected_index[1]]],
-                                total_tesseract_clean_output[[selected_index[2]]],
-                                total_tesseract_clean_output[[selected_index[3]]],
-                                total_tesseract_clean_output[[selected_index[4]]],
-                                total_tesseract_clean_output[[selected_index[5]]]))
-
+current_ground_truth_txt <- random_list(total_ground_truth_txt_100, selected_index)
+current_tesseract_txt <- random_list(total_tesseract_txt_100, selected_index)
+current_tesseract_clean_txt <- random_list(total_tesseract_clean_output, selected_index)
 
 corpus <- c()
 for(i in 1:length(strsplit(current_ground_truth_txt[[1]],split = ' '))){
@@ -178,7 +187,7 @@ for(i in selected_index){
   error_words <- c(error_words,as.character(total_detect_output[[i]][,1]))
 }
 
-corpus_matrix <- matrix(corpus,nrow = length(corpus),ncol = 1)
+corpus_matrix <- matrix(unique(corpus),nrow = length(unique(corpus)),ncol = 1)
 
 distance <- function(x){
   return(stringdist::stringdist(x,word))
@@ -190,22 +199,23 @@ for(i in error_words){
   word <- i
   result <- apply(corpus_matrix,1,distance)
   index <- order(result)[1:50]
-  total_candidate[[word]] <- unique(corpus_matrix[index,])
+  total_candidate[[word]] <- corpus_matrix[index,]
 }
 )
-
+#save(total_candidate, file="../output/total_candidate.RData")
+#load("../output/total_candidate.RData")
 ```
 
 Construct training set
 ```{r, warning=FALSE, message = FALSE}
 source("../lib/feature_score.R")
 training <- matrix(NA,nrow = sum(lengths(total_candidate)),ncol = 6)
-comparison <- rbind(total_detect_output[[selected_index[1]]],
-                    total_detect_output[[selected_index[2]]],
-                    total_detect_output[[selected_index[3]]],
-                    total_detect_output[[selected_index[4]]],
-                    total_detect_output[[selected_index[5]]]
-                    )
+
+comparison <- data.frame(tesseract_err = 0,ground_truth_err = 0)
+comparison <- comparison[-1,]
+for(i in selected_index){
+  comparison <- rbind(comparison,total_detect_output[[i]])
+}
 
 trainset_time<-system.time(
   for(i in 1:length(total_candidate)){
@@ -297,6 +307,7 @@ for(i in names(final_result)){
   else{evaluate <- c(evaluate,0)}
 }
 mean(evaluate)
+
 ```
 
 # Step 5 - Performance measure
@@ -319,7 +330,8 @@ target_char_only <- c(letters,0,1,2,3,4,5,6,7,8,9)
 ground_truth_vec <- str_split(paste(current_ground_truth_txt, collapse = " ")," ")[[1]]
 tesseract_vec <- str_split(paste(current_tesseract_txt, collapse = " ")," ")[[1]] 
 tesseract_delete_error_vec <- current_tesseract_clean_txt[[1]]
-predict_vec <- final[final$index!=0,5]
+#predict_vec <- final[final$index!=0,5]
+predict_vec <- final[final$index==1,5]
 predict_grdth_vec <- final[,5]
 
 ## Remove punctuations from word vectors
@@ -328,9 +340,6 @@ tesseract_vec_remove <- gsub('[[:punct:]]+','',tesseract_vec)
 tesseract_delete_error_vec_remove <- gsub('[[:punct:]]+','',tesseract_delete_error_vec)
 predict_vec_remove <- gsub('[[:punct:]]+','',predict_vec)
 predict_grdth_vec_remove <- gsub('[[:punct:]]+','',predict_grdth_vec)
-
-#old_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_vec)) 
-#new_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec), tolower(tesseract_delete_error_vec)) 
 
 ## Word Level evaluation
 old_intersect_vec <- vecsets::vintersect(tolower(ground_truth_vec_remove), tolower(tesseract_vec_remove)) 
@@ -370,5 +379,5 @@ OCR_performance_table["character_wise_precision","Tesseract_with_postprocessing"
   (common_cha_table_post+common_cha_table_all_cha)/tesseract_cha_table_all_cha
 kable(OCR_performance_table, caption="Summary of OCR performance")
 
-OCR_performance_table
+#OCR_performance_table
 ```
